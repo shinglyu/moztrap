@@ -2,6 +2,7 @@
 Django==1.5.2
 
 BeautifulSoup==3.2.1
+beautifulsoup4==4.3.1
 certifi==0.0.8
 django-ajax-loading-overlay==0.1.2
 django-appconf==0.6
