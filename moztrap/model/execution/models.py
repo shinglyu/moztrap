@@ -601,7 +601,7 @@ class Result(MTModel):
                      "blocked", "skipped")
     REVIEW = Choices("pending", "reviewed")
 
-    ALL_STATES = STATUS._full
+    ALL_STATES = STATUS._db_values
     PENDING_STATES = [STATUS.assigned, STATUS.started]
     COMPLETED_STATES = [STATUS.passed, STATUS.failed, STATUS.invalidated,
                         STATUS.blocked]

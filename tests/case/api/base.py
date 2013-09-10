@@ -81,10 +81,11 @@ class ApiTestCase(WebTest):
         return self.app.get(url, params=params, status=status)
 
 
-    def delete(self, resource_name, id, params={}, status=200):
+    def delete(self, resource_name, id, params={}, status=200,
+               expect_errors=False):
         url = self.get_detail_url(resource_name, id)
         url = "{0}?{1}".format(url, urllib.urlencode(params))
-        return self.app.delete(url, status=status)
+        return self.app.delete(url, status=status, expect_errors=expect_errors)
 
 
     def get_list(self, params={}, status=200):

@@ -1,6 +1,6 @@
 from tastypie import http
 from tastypie.authentication import ApiKeyAuthentication
-from tastypie.authorization import  Authorization
+from tastypie.authorization import Authorization
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.resources import ModelResource
 
@@ -23,6 +23,8 @@ class MTApiKeyAuthentication(ApiKeyAuthentication):
 
         return True
 
+    def get_identifier(self, request):
+        return request.user.username
 
     def is_authenticated(self, request, **kwargs):
         """
@@ -74,17 +76,52 @@ class MTAuthorization(Authorization):
         logger.debug("desired permission %s" % permission)
         return permission
 
-    def is_authorized(self, request, object=None):
+    def check_authorized(self, request):
 
-        if request.method == "GET":
-            logger.debug("GET always allowed")
-            return True
-        elif request.user.has_perm(self.permission):
+        if not hasattr(request, "user"):
+            logger.debug("user not logged in")
+            print("user not logged in")
+            raise Unauthorized("You must be logged in to use that resource.")
+
+        if request.user.has_perm(self.permission):
             logger.debug("user has permissions")
+            print("user has permissions")
             return True
         else:
             logger.debug("user does not have permissions")
-            return False
+            print("user does not have permissions")
+            raise Unauthorized("You are not allowed to access that resource.")
+
+    def read_list(self, object_list, bundle):
+        return object_list
+
+    def read_detail(self, object_list, bundle):
+        return True
+
+    def create_list(self, object_list, bundle):
+        if self.check_authorized(bundle.request):
+            return object_list
+
+    def create_detail(self, object_list, bundle):
+        if self.check_authorized(bundle.request):
+            return True
+
+    def update_list(self, object_list, bundle):
+        if self.check_authorized(bundle.request):
+            return object_list
+
+    def update_detail(self, object_list, bundle):
+        if self.check_authorized(bundle.request):
+            return True
+
+    def delete_list(self, object_list, bundle):
+        if self.check_authorized(bundle.request):
+            return object_list
+
+    def delete_detail(self, object_list, bundle):
+        if self.check_authorized(bundle.request):
+            return True
+
 
 
 
@@ -141,37 +178,37 @@ class MTResource(ModelResource):
         return bundle
 
 
-    def obj_create(self, bundle, request=None, **kwargs):
+    def obj_create(self, bundle, **kwargs):
         """Set the created_by field for the object to the request's user"""
         # this try/except logging is more helpful than 500 / 404 errors on
         # the client side
         try:
             bundle = super(MTResource, self).obj_create(
-                bundle=bundle, request=request, **kwargs)
-            bundle.obj.created_by = request.user
-            bundle.obj.save(user=request.user)
+                bundle=bundle, **kwargs)
+            bundle.obj.created_by = bundle.request.user
+            bundle.obj.save(user=bundle.request.user)
             return bundle
         except Exception:  # pragma: no cover
             logger.exception("error creating %s", bundle)  # pragma: no cover
             raise  # pragma: no cover
 
 
-    def obj_update(self, bundle, request=None, **kwargs):
+    def obj_update(self, bundle, **kwargs):
         """Set the modified_by field for the object to the request's user"""
         # this try/except logging is more helpful than 500 / 404 errors on the
         # client side
         bundle = self.check_read_create(bundle)
         try:
             bundle = super(MTResource, self).obj_update(
-                bundle=bundle, request=request, **kwargs)
-            bundle.obj.save(user=request.user)
+                bundle=bundle, **kwargs)
+            bundle.obj.save(user=bundle.request.user)
             return bundle
         except Exception:  # pragma: no cover
             logger.exception("error updating %s", bundle)  # pragma: no cover
             raise  # pragma: no cover
 
 
-    def obj_delete(self, request=None, **kwargs):
+    def obj_delete(self, bundle, **kwargs):
         """Delete the object.
         The DELETE request may include permanent=True/False in its params
         parameter (ie, along with the user's credentials). Default is False.
@@ -179,13 +216,13 @@ class MTResource(ModelResource):
         # this try/except logging is more helpful than 500 / 404 errors on
         # the client side
         try:
-            permanent = request._request.dicts[1].get("permanent", False)
+            permanent = bundle.request._get.get("permanent", False)
             # pull the id out of the request's path
-            obj_id = self._id_from_uri(request.path)
+            obj_id = self._id_from_uri(bundle.request.path)
             obj = self.model.objects.get(id=obj_id)
-            obj.delete(user=request.user, permanent=permanent)
+            obj.delete(user=bundle.request.user, permanent=permanent)
         except Exception:  # pragma: no cover
-            logger.exception("error deleting %s", request.path)  # pragma: no cover
+            logger.exception("error deleting %s", bundle.request.path)  # pragma: no cover
             raise  # pragma: no cover
 
 

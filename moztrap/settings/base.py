@@ -170,6 +170,7 @@ LOGGING = {
     "handlers": {
         "mail_admins": {
             "level": "ERROR",
+            "filters": [],
             "class": "django.utils.log.AdminEmailHandler"
         }
     },
@@ -242,3 +243,8 @@ SITE_URL = "http://localhost:8000"
 BROWSERID_CREATE_USER = "moztrap.model.core.auth.browserid_create_user"
 
 USE_BROWSERID = True
+
+ALLOWED_HOSTS = [
+    ".mozilla.org",
+    ".mozilla.org."
+    ]

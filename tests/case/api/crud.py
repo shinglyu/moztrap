@@ -646,12 +646,20 @@ class ApiCrudCases(ApiTestCase):
         credentials = {"username": user.username, "api_key": apikey.key}
 
         # do delete
-        self.delete(self.resource_name, obj_id, params=credentials, status=401)
+        res = self.delete(
+            self.resource_name,
+            obj_id,
+            params=credentials,
+            status=401,
+            expect_errors=True,
+            )
 
         # make sure object is still found
         backend_obj = self.backend_object(obj_id)
 
         # and delete meta data has not been set
         meta_after_delete = self.backend_meta_data(backend_obj)
+
+        self.assertEquals(res.status, 401)
         self.assertIsNone(meta_after_delete["deleted_on"])
         self.assertIsNone(meta_after_delete["deleted_by"])
