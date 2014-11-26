@@ -616,8 +616,9 @@
         noInputsNote: false,                            // Set ``true`` to add "none" when no there are no inputs
         extraDataName: null,                            // Additional key to be sent with ajax-request
         extraDataFn: null,                              // Function which returns additional value to be sent with ajax-request
-        pinable: true,                                   // Whether the result template supports pinning, as in a pinable filter.
-        minLength: 2
+        pinable: true,                                  // Whether the result template supports pinning, as in a pinable filter.
+        minLength: 2                                    // Minimum query string length to trigger auto-completion
     };
 
 }(jQuery));
+
