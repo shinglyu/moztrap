@@ -223,49 +223,51 @@
         textbox
             .keyup(function (e) {
                 // Updates suggestion-list if typed-text has changed
-                if(textbox[0].value.length >= options.minLength){
-                  var updateSuggestionList = function () {
-                      var data,
-                          serializedData,
-                          extraData = {},
-                          extraDataName,
-                          extraDataVal;
-                      if (textbox.val() !== typedText && textbox.val() !== placeholder) {
-                          typedText = textbox.val();
-                          if (typedText.length && typedText.trim() !== '') {
-                              if (options.ajax) {
-                                  if (options.extraDataName && options.extraDataFn) {
-                                      extraDataName = options.extraDataName;
-                                      extraDataVal = options.extraDataFn();
-                                      extraData[extraDataName] = extraDataVal;
-                                  }
-                                  data = $.extend({}, extraData, {text: typedText});
-                                  serializedData = $.param(data);
-                                  if (cache[serializedData]) {
-                                      updateSuggestions(cache[serializedData], true);
-                                  } else {
-                                      ajaxCalls = ajaxCalls + 1;
-                                      $.get(options.url, data, function (response) {
-                                          ajaxResponses = ajaxResponses + 1;
-                                          cache[serializedData] = response;
-                                          updateSuggestions(response, false);
-                                      });
-                                  }
-                              } else {
-                                  updateSuggestions();
-                              }
-                          } else {
-                              suggestionList.empty().hide();
-                          }
-                      }
-                  };
-                if (options.ajax || options.debounce) {
-                    $(this).doTimeout('autocomplete', 200, function () {
-                        updateSuggestionList();
-                    });
-                } else {
-                    updateSuggestionList();
+                if(textbox.val().trim().length < options.minLength){
+                    //abort if query string is too short
+                    return;
                 }
+                var updateSuggestionList = function () {
+                    var data,
+                        serializedData,
+                        extraData = {},
+                        extraDataName,
+                        extraDataVal;
+                    if (textbox.val() !== typedText && textbox.val() !== placeholder) {
+                        typedText = textbox.val();
+                        if (typedText.length && typedText.trim() !== '') {
+                            if (options.ajax) {
+                                if (options.extraDataName && options.extraDataFn) {
+                                    extraDataName = options.extraDataName;
+                                    extraDataVal = options.extraDataFn();
+                                    extraData[extraDataName] = extraDataVal;
+                                }
+                                data = $.extend({}, extraData, {text: typedText});
+                                serializedData = $.param(data);
+                                if (cache[serializedData]) {
+                                    updateSuggestions(cache[serializedData], true);
+                                } else {
+                                    ajaxCalls = ajaxCalls + 1;
+                                    $.get(options.url, data, function (response) {
+                                        ajaxResponses = ajaxResponses + 1;
+                                        cache[serializedData] = response;
+                                        updateSuggestions(response, false);
+                                    });
+                                }
+                            } else {
+                                updateSuggestions();
+                            }
+                        } else {
+                            suggestionList.empty().hide();
+                        }
+                    }
+                };
+              if (options.ajax || options.debounce) {
+                  $(this).doTimeout('autocomplete', 200, function () {
+                      updateSuggestionList();
+                  });
+              } else {
+                  updateSuggestionList();
               }
             })
             .keydown(function (e) {
