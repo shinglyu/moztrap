@@ -262,13 +262,13 @@
                         }
                     }
                 };
-              if (options.ajax || options.debounce) {
-                  $(this).doTimeout('autocomplete', 200, function () {
-                      updateSuggestionList();
-                  });
-              } else {
-                  updateSuggestionList();
-              }
+                if (options.ajax || options.debounce) {
+                    $(this).doTimeout('autocomplete', 200, function () {
+                        updateSuggestionList();
+                    });
+                } else {
+                    updateSuggestionList();
+                }
             })
             .keydown(function (e) {
                 // If textbox has fake placeholder text, removes it on keydown for non-meta keys other than shift, ctrl, alt, caps, or esc.
