@@ -223,7 +223,7 @@
         textbox
             .keyup(function (e) {
                 // Updates suggestion-list if typed-text has changed
-                if(textbox.val().trim().length < options.minLength){
+                if (textbox.val().trim().length < options.minLength) {
                     //abort if query string is too short
                     return;
                 }
