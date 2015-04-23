@@ -78,6 +78,7 @@ class RunResource(ModelResource):
         RunCaseVersionResource,
         "runcaseversions",
         )
+    series = fields.ForeignKey('self', 'series', null=True)
 
     class Meta:
         queryset = Run.objects.all()
@@ -90,10 +91,12 @@ class RunResource(ModelResource):
             "productversion",
             "environments",
             "runcaseversions",
+            "is_series",
             ]
         filtering = {
             "productversion": ALL_WITH_RELATIONS,
             "status": "exact",
+            "series": ALL_WITH_RELATIONS,
         }
         authentication = MTApiKeyAuthentication()
         authorization = ReportResultsAuthorization()
@@ -152,8 +155,7 @@ class RunResource(ModelResource):
             resp._headers["content-type"] = ("Content-Type", "application/json; charset=utf-8")
         return resp
 
-
-    def obj_create(self, bundle, request=None, **kwargs):
+def obj_create(self, bundle, request=None, **kwargs):
         """Set the created_by field for the run to the request's user"""
         request = request or bundle.request
         bundle = super(RunResource, self).obj_create(bundle=bundle, request=request, **kwargs)
@@ -162,7 +164,7 @@ class RunResource(ModelResource):
         return bundle
 
 
-    def hydrate_runcaseversions(self, bundle):
+def hydrate_runcaseversions(self, bundle):
         """
         Handle the runcaseversion creation during a POST of a new Run.
 
@@ -310,6 +312,71 @@ class ResultResource(ModelResource):
         bundle.obj = method(**data)
         return bundle
 
+
+class ResultViewResource(ModelResource):
+    """
+    Endpoint for submitting results for a set of runcaseversions.
+
+    This endpoint is write only.  The submitted result objects should
+    be formed like this::
+
+        {
+            "objects": [
+                {
+                    "case": "1",
+                    "environment": "23",
+                    "run_id": "1",
+                    "status": "passed"
+                },
+                {
+                    "case": "14",
+                    "comment": "why u no make sense??",
+                    "environment": "23",
+                    "run_id": "1",
+                    "status": "invalidated"
+                },
+                {
+                    "bug": "http://www.deathvalleydogs.com",
+                    "case": "326",
+                    "comment": "why u no pass?",
+                    "environment": "23",
+                    "run_id": "1",
+                    "status": "failed",
+                    "stepnumber": 1
+                }
+            ]
+        }
+
+    """
+
+    runcaseversion = fields.ForeignKey(RunCaseVersionResource, 'runcaseversion')
+    environment = fields.ForeignKey(EnvironmentResource, 'environment')
+    #environment = fields.CharField(, 'environment')
+    class Meta:
+        queryset = Result.objects.all()
+        resource_name = "resultview"
+        list_allowed_methods = ["get"]
+
+        filtering = {
+            "created_on": ALL_WITH_RELATIONS,
+            "runcaseversion": ALL_WITH_RELATIONS,
+        }
+
+        fields = ["runcaseversion", "environment", "status", "cc_version",
+                  "created_on", "modified_on"]
+
+
+    def dehydrate(self, bundle):
+        """Add some convenience fields to the return JSON."""
+
+        result = bundle.obj
+        bundle.data["run"] = result.runcaseversion.run.id
+        bundle.data["run_name"] = result.runcaseversion.run.name
+        if result.runcaseversion.run.series == None:
+            bundle.data["run_series"] = None
+        else:
+            bundle.data["run_series"] = result.runcaseversion.run.series.id
+        return bundle
 
 
 class RunSuiteResource(MTResource):
